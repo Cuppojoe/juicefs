@@ -121,6 +121,10 @@ func newRedisMeta(driver, addr string, conf *Config) (Meta, error) {
 	certFile := query.pop("tls-cert-file")
 	keyFile := query.pop("tls-key-file")
 	caCertFile := query.pop("tls-ca-cert-file")
+	urlPrefix := query.pop("prefix")
+	if urlPrefix != "" {
+		urlPrefix = "-" + urlPrefix
+	}
 	tlsServerName := query.pop("tls-server-name")
 	u.RawQuery = values.Encode()
 
@@ -164,7 +168,7 @@ func newRedisMeta(driver, addr string, conf *Config) (Meta, error) {
 	opt.ReadTimeout = readTimeout
 	opt.WriteTimeout = writeTimeout
 	var rdb redis.UniversalClient
-	var prefix string
+	var basePrefix string
 	if strings.Contains(hosts, ",") && strings.Index(hosts, ",") < strings.Index(hosts, ":") {
 		var fopt redis.FailoverOptions
 		ps := strings.Split(hosts, ",")
@@ -250,14 +254,14 @@ func newRedisMeta(driver, addr string, conf *Config) (Meta, error) {
 				}
 			}
 			rdb = redis.NewClusterClient(&copt)
-			prefix = fmt.Sprintf("{%d}", opt.DB)
+			basePrefix = fmt.Sprintf("%d", opt.DB)
 		}
 	}
 
 	m := &redisMeta{
 		baseMeta: newBaseMeta(addr, conf),
 		rdb:      rdb,
-		prefix:   prefix,
+		prefix:   fmt.Sprintf("{%s%s}", basePrefix, urlPrefix),
 	}
 	m.en = m
 	m.checkServerConfig()
