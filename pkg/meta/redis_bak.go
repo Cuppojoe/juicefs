@@ -930,12 +930,11 @@ func (m *redisMeta) prepareLoad(ctx Context, opt *LoadOption) error {
 			return err
 		}
 	} else {
-		dbsize, err := m.rdb.DBSize(ctx).Result()
+		err := m.scan(ctx, "*", func(keys []string) error {
+			return fmt.Errorf("database redis://%s is not empty", m.addr)
+		})
 		if err != nil {
 			return err
-		}
-		if dbsize > 0 {
-			return fmt.Errorf("database redis://%s is not empty", m.addr)
 		}
 	}
 	return nil
